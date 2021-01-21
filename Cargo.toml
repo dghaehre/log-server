@@ -1,5 +1,5 @@
 [package]
-name = "empty-server"
+name = "log-server"
 version = "0.1.0"
 authors = ["Daniel <dghaehre@gmail.com>"]
 edition = "2018"

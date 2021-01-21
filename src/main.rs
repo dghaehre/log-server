@@ -12,10 +12,10 @@ use serde_json::{Result, Value};
 use simplelog::*;
 
 fn main() {
-    let matches = App::new("The empty server")
+    let matches = App::new("log-server")
         .version("1.1")
         .author("Daniel Hæhre <dghaehre@gmail.com>")
-        .about("Displays all request and returns 200")
+        .about("A simple log server, that logs all requests and always returns 200")
         .arg(
             Arg::with_name("port")
                 .short("p")
