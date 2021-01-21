@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Build
+      run: cargo build --release
+    - name: Upload binary as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: upload-ubuntu-binary
+        path: target/release/domeneshop-scraper

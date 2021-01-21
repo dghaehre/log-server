@@ -1,18 +1,19 @@
 //! Displays all request and returns 200 if nothing else is specified
+extern crate log;
+extern crate simplelog;
+use std::fs::File;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
 
-use chrono::prelude::*;
 use clap::{App, Arg};
-use colored::*;
+use log::{error, info};
 use serde_json::{Result, Value};
+use simplelog::*;
 
 fn main() {
-    let mut count = 0;
-
     let matches = App::new("The empty server")
-        .version("1.0")
+        .version("1.1")
         .author("Daniel Hæhre <dghaehre@gmail.com>")
         .about("Displays all request and returns 200")
         .arg(
@@ -22,28 +23,43 @@ fn main() {
                 .help("Port")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("file")
+                .short("f")
+                .long("file")
+                .help("Write to file instead of stdout/stderr")
+                .takes_value(true),
+        )
         .get_matches();
 
     let port = matches.value_of("port").unwrap_or("3000");
-
+    let file = matches.value_of("file");
     let address = format!("127.0.0.1:{}", &port);
+
+    // Init logger
+    match file {
+        Some(f) => {
+            let _ = WriteLogger::init(
+                LevelFilter::Debug,
+                Config::default(),
+                File::create(f).unwrap(),
+            );
+        }
+        None => {
+            let _ = SimpleLogger::init(LevelFilter::Debug, Config::default());
+        }
+    };
 
     match TcpListener::bind(&address) {
         Ok(listener) => {
-            println!("Listening on port: {}", &port);
+            info!("Listening on port: {}", &port);
             for stream in listener.incoming() {
-                count = count + 1;
-                let now: DateTime<Local> = Local::now();
-                let c_now = format!("{}", now.format("%H:%M:%S")).yellow();
-                let c_count = format!("({})", &count).blue();
-
-                println!("\n{}  {}\n", c_now, c_count);
                 let stream = stream.unwrap();
                 handle_connection(stream);
             }
-        },
+        }
         Err(_) => {
-            println!("Could not bind to port {}", &port);
+            error!("Could not bind to port {}", &port);
         }
     }
 }
@@ -56,20 +72,19 @@ fn handle_connection(mut stream: TcpStream) {
     let headers = arr.get(0).unwrap();
     let body = arr.get(1);
 
-    println!("{}", headers);
+    info!("{}", headers);
 
     if let Some(b) = body {
-        println!("");
         let sanitized = b.trim_matches('\u{0}').trim_matches('\n');
 
         let json: Result<Value> = serde_json::from_str(&sanitized);
 
         match json {
             Ok(j) => {
-                println!("{:#}", jsonxf::pretty_print(&j.to_string()).unwrap());
+                info!("{}", jsonxf::pretty_print(&j.to_string()).unwrap());
             }
             Err(_) => {
-                println!("{}", b);
+                info!("{}", sanitized);
             }
         }
     }
@@ -77,7 +92,4 @@ fn handle_connection(mut stream: TcpStream) {
     let response = "HTTP/1.1 200 OK\r\n\r\n";
     stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap();
-
-    println!("");
-    println!("---------- 200 OK ---------");
 }
