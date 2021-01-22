@@ -23,5 +23,5 @@ jobs:
     - name: Upload binary as artifact
       uses: actions/upload-artifact@v2
       with:
-        name: upload-ubuntu-binary
-        path: target/release/domeneshop-scraper
+        name: log-server
+        path: target/release/log-server
